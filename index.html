@@ -1,0 +1,163 @@
+<!DOCTYPE html> 
+<html lang = "en">
+<head>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <link rel = "stylesheet" type = "text/css" href = "index.css" media = "screen"/>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap" rel="stylesheet">
+  
+
+</head>
+<body>
+    <h1 id = "title">U.S. Unemployment Rate</h1>
+    <h2 id = "description">January 1948 - September 2020</h2>
+    <script>
+        //open a get request and send it 
+        const request = new XMLHttpRequest();
+        request.open("GET", 
+                     "https://raw.githubusercontent.com/alec-huang-labs/Unemployment/main/unemployment.json",
+                     true);
+        request.send();
+        request.onload = () => {
+
+            //prase through json string then split array into 2
+            let json = JSON.parse(request.responseText)
+            firstJson = json.slice(0, json.length/2)
+            secondJson = json.slice(json.length/2)
+            console.log(firstJson, secondJson)
+            //print to console to test 
+            console.log(new Date(json[0].DATE), new Date(json[json.length - 1].DATE), json.length)
+
+            //dimensions of svg canvas
+            //TODO: create a margin obj (clearner code)
+            const horizontalPad = 25;
+            const verticalPad = 25;
+            const w = firstJson.length * 3 - horizontalPad;
+            const h = 300;
+
+            //x & y scales
+            const topXScale = d3.scaleTime()
+                                .domain([new Date(firstJson[0].DATE), 
+                                        new Date(firstJson[firstJson.length - 1].DATE)])  //first and last DATE props in arr of objs
+                                .range([horizontalPad, w - horizontalPad]);
+            const bottomXScale = d3.scaleTime()
+                                    .domain([new Date(secondJson[0].DATE), 
+                                            new Date(secondJson[secondJson.length - 1].DATE)])  //first and last DATE props in arr of objs
+                                    .range([horizontalPad, w - horizontalPad]);
+            const yScale = d3.scaleLinear()
+                            .domain([0, 15])
+                            .range([h - verticalPad, verticalPad])
+
+            //first & second svg canvas
+            const firstSvg = d3.select("body")
+                                .append("svg")
+                                .attr("width", w)
+                                .attr("height", h)
+                                .attr("class", "bg")
+                                .attr("align", "center")
+                                .style("z-index", "-1")
+            
+            const secondSvg = d3.select("body")
+                                .append("svg")
+                                .attr("width", w)
+                                .attr("height", h)
+                                .attr("class", "bg")
+                                .style("z-index", "-1")
+            
+            //x & y axis
+            const topXAxis = d3.axisBottom(topXScale)
+            const bottomXAxis = d3.axisBottom(bottomXScale);
+            const yAxis = d3.axisLeft(yScale)
+                            .ticks(7)
+                            .tickFormat(d => d + "%")
+                            
+            firstSvg.append("g")
+                    .attr("transform", "translate(0," + (h - horizontalPad) + ")")
+                    .attr("class", "axis")
+                    .call(topXAxis)
+            firstSvg.append("g")
+                    .attr("transform", "translate(" + horizontalPad + ", 0)")
+                    .attr("class", "axis")
+                    .call(yAxis)
+            secondSvg.append("g")
+                    .attr("transform", "translate(0," + (h - horizontalPad) + ")")
+                    .attr("class", "axis")
+                    .call(bottomXAxis)
+            secondSvg.append("g")
+                    .attr("transform", "translate(" + horizontalPad + ", 0)")
+                    .attr("class", "axis")
+                    .call(yAxis)
+
+            //y-axis title
+            firstSvg.append('text')
+                    .attr('transform', 'rotate(-90)')
+                    .attr('x', -130)
+                    .attr('y', 40)
+                    .attr("font-size", "12px")
+                    .text('Unemployment Rate')
+                    .attr("class", "axisLabel")
+            
+            //tooltip (not working)
+            var tooltip = d3.select("body")
+                            .append("div")
+                            .attr("class", "tooltip")
+                            .style("z-index", "1")
+                            .style("visibility", "hidden")
+                            .text("a simple tooltip")
+                            
+            
+            //tooltip function
+            /*
+            var showTooltip = function(d) {
+                tooltip.transition()
+                        .duration(100)
+                        .style("opacity", 1)
+                tooltip.html("Date: " + d.DATE)
+                        .style("left", (d3.mouse(this)[0]+[20]) + "px")
+                        .style("top", (d3.mouse(this)[1]) + "px")
+            }
+            //movetooltip doesnt work for some reason
+            var moveTooltip = function(d) {
+                tooltip.style("left", (d3.mouse(this)[0]+20) + "px")
+                        .style("top", (d3.mouse(this)[1]) + "px")
+            }
+            var hideTooltip = function(d) {
+                tooltip
+                .transition()
+                .duration(100)
+                .style("opacity", 0)
+            }
+            */
+
+            //make bars for each data point
+            firstSvg.selectAll("rect")
+               .data(firstJson)
+               .enter()
+               .append("rect")
+               .attr("x", (d, i) => topXScale(new Date(d.DATE)))
+               .attr("y", (d, i) => yScale(d.UNRATE))
+               .attr("width", 3)
+               .attr("height", (d, i) => h - verticalPad -  yScale(d.UNRATE))
+               .attr("fill", "#4682B4")
+               .attr("class", "bar")
+               .on("mouseover", (d, i) => tooltip.style("visibility", "visible")
+                                                .html(i.DATE + "<br>" + i.UNRATE + "%"))
+               .on("mouseout", () => tooltip.style("visibility", "hidden"))   
+            secondSvg.selectAll("rect")
+               .data(secondJson)
+               .enter()
+               .append("rect")
+               .attr("x", (d, i) => bottomXScale(new Date(d.DATE)))
+               .attr("y", (d, i) => yScale(d.UNRATE))
+               .attr("width", 3)
+               .attr("height", (d, i) => h - verticalPad -  yScale(d.UNRATE))
+               .attr("fill", "#4682B4")
+               .attr("class", "bar")
+               .on("mouseover", (d, i) => tooltip.style("visibility", "visible")
+                                                .html(i.DATE + "<br>" + i.UNRATE + "%"))
+               .on("mouseout", () => tooltip.style("visibility", "hidden")) 
+        }
+
+    
+    </script>
+</body>
+

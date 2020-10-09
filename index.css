@@ -1,0 +1,36 @@
+#title, #description {
+    text-align: center;
+    font-family: 'Roboto', sans-serif;
+    color: #708090;
+    font-size: 16px;
+}
+
+.axis line {
+    stroke:#708090;
+}
+.axis path {
+    stroke:#708090;
+}
+.axis text {
+    fill:#708090;
+}
+.axisLabel {
+    fill:#708090;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+}
+
+.bar:hover {
+    opacity: 0;
+}
+.bg {
+    background-color:#F0F8FF;
+    display: flex;
+    
+}
+.tooltip{
+    text-align: center;
+    color:#708090;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+}
